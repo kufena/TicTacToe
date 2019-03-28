@@ -67,27 +67,40 @@ let findgame (barr : GameTree option array) =
        g (barr.Length - 1)
 
 // traverse the whole game to count the number of wins.
-let rec countwins board = 
+let rec countwins board playerfn = 
     match board with
-    | Win b -> 1
+    | Win (pl,b) -> playerfn pl
     | Draw b -> 0
     | Node (a,b,rest) ->
         let f x = match x with
                     | None -> 0
-                    | Some p -> countwins p
+                    | Some p -> countwins p playerfn
         rest |> Array.map f |> Array.sum
 
 // traverse the whole game to count the number of draws.
-let rec countdraws board = 
+let rec countdraws board playerfn = 
     match board with
-    | Win b -> 0
+    | Win (p,b) -> playerfn p
     | Draw b -> 1
     | Node (a,b,rest) ->
         let f x = match x with
                     | None -> 0
-                    | Some p -> countdraws p
+                    | Some p -> countdraws p playerfn
         rest |> Array.map f |> Array.sum
 
 // We could build an interactive game here - player goes first - we find the option with the best
 // win to draw ratio and move that way - gives us the best possible chance of winning.  Of course,
 // win doesn't, at the moment, announce WHO won.  That probably needs rectifying.
+
+
+let rec bestpath_sub boardarr player =
+    let fn x = match x with
+                | Some x -> countwins x (fun p -> if p = player then 1 else 0)
+                | None -> 0
+
+    boardarr |> Array.map fn
+ 
+let bestpath board player
+    = match board with
+        | Node (a,b,c) -> bestpath_sub c player
+        | y -> [| 0 |]
